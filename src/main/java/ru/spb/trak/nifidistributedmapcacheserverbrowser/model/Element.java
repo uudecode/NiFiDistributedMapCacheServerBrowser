@@ -1,7 +1,6 @@
 package ru.spb.trak.nifidistributedmapcacheserverbrowser.model;
 
 
-import com.fasterxml.jackson.databind.util.JSONPObject;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
@@ -9,7 +8,7 @@ import lombok.ToString;
 @Data
 @RequiredArgsConstructor
 @ToString
-public class Key {
+public class Element {
   private final String key;
-  private JSONPObject value;
+  private String value;
 }
