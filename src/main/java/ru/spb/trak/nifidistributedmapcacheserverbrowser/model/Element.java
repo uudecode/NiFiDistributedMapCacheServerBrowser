@@ -6,9 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 @Data
-@RequiredArgsConstructor
-@ToString
-public class Element {
+  public class Element {
   private final String key;
   private String value;
 }
