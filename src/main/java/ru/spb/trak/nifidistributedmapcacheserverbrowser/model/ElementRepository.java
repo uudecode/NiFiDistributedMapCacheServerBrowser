@@ -25,14 +25,14 @@ public class ElementRepository implements Repository<Element, Long> {
 
     private static final int ATTEMPTS = 20;
 
-    public Collection<Element> findAll(String host, int port) throws UnknownHostException, IOException, ProtocolVersionException {
+    public Collection<Element> findAll(String host, int port, int pageSize, int pageNumber) throws UnknownHostException, IOException, ProtocolVersionException {
         final Collection<Element> elements = new ArrayList<Element>();
         fillWithKeys(elements, host, port);
         fillValues(elements, host, port, ".*");
         return elements;
     }
 
-    public Collection<Element> findByPattern(String host, int port, String pattern) throws UnknownHostException, IOException, ProtocolVersionException {
+    public Collection<Element> findByPattern(String host, int port, String pattern, int pageSize, int pageNumber) throws UnknownHostException, IOException, ProtocolVersionException {
         final Collection<Element> elements = new ArrayList<Element>();
         fillWithKeys(elements, host, port);
         fillValues(elements, host, port, ".*" + pattern + ".*");

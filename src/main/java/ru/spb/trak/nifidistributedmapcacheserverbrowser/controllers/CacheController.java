@@ -28,13 +28,15 @@ public class CacheController {
     }
 
     @GetMapping("/keys")
-    Collection<Element> keys(@RequestParam(name = "host", required = true) String host,
-                             @RequestParam(name = "port", required = true) int port,
+    Collection<Element> keys(@RequestParam(name = "host") String host,
+                             @RequestParam(name = "port") int port,
+                             @RequestParam(name = "page_size", required = false) int pageSize,
+                             @RequestParam(name = "page_number", required = false) int pageNumber,
                              @RequestParam(name = "pattern", required = false) String pattern) throws UnknownHostException, IOException, ProtocolVersionException {
         if (StringUtils.hasText(pattern)) {
-            return elementRepository.findByPattern(host, port, pattern);
+            return elementRepository.findByPattern(host, port, pattern, pageSize, pageNumber);
         }
-        return elementRepository.findAll(host, port);
+        return elementRepository.findAll(host, port, pageSize, pageNumber);
     }
 
 }

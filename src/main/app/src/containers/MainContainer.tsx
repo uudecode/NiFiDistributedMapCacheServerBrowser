@@ -1,11 +1,11 @@
 import React, {SyntheticEvent, useState, KeyboardEvent} from "react";
-import {Container, Header, Content, Form, Button,  Pagination, Schema } from "rsuite";
+import {Container, Header, Content, Form, Button, Pagination, Schema, Message} from "rsuite";
 
-import { Table, Column, Cell, HeaderCell, ColumnGroup, TableProps } from 'rsuite-table';
+import {Table, Column, Cell, HeaderCell, ColumnGroup, TableProps} from 'rsuite-table';
 import axios from "axios";
 
 const TextField = (props: any) => {
-    const { name, label, accepter, ...rest } = props;
+    const {name, label, accepter, ...rest} = props;
     return (
         <Form.Group controlId={`${name}`}>
             <Form.ControlLabel>{label} </Form.ControlLabel>
@@ -25,16 +25,18 @@ const MainContainer = () => {
     const [total, setTotal] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const [pageNumber, setPageNumber] = useState(1);
-    const handleSubmit = (e: SyntheticEvent<Element, Event>) => {
-        e.preventDefault();
-        queryData();
+    const handleSubmit = (checkStatus: boolean, e: SyntheticEvent<Element, Event>) => {
+        if (checkStatus) {
+            e.preventDefault();
+            queryData();
+        }
     };
     const handlerKeys = (e: KeyboardEvent<HTMLFormElement>) => {
         if (e.key === "Enter") {
             queryData();
         }
     };
-    const [inputText, setInputText] = useState({ host: "", port: "", pattern: "" });
+    const [inputText, setInputText] = useState({host: "", port: "", pattern: ""});
     const onChange = (e: Record<string, string>) => {
         setInputText({
             ...inputText,
@@ -63,11 +65,12 @@ const MainContainer = () => {
         <div className="show-fake-browser ">
             <Container>
                 <Header>
-                    <Form layout="inline" model={model} onChange={onChange} formValue={inputText}>
-                        <TextField name="host" label="Host"  style={{width: 300}}  onKeyUp={handlerKeys}/>
-                        <TextField name="port" label="Port"  style={{width: 80}} onKeyUp={handlerKeys}/>
-                        <TextField name="pattern" label="Pattern"  style={{width: 300}} onKeyUp={handlerKeys}/>
-                        <Button type="submit" onClick={handleSubmit} appearance="primary">Show me!</Button>
+                    <Form layout="inline" model={model} onChange={onChange} onSubmit={handleSubmit}
+                          formValue={inputText}>
+                        <TextField name="host" label="Host" style={{width: 300}} onKeyUp={handlerKeys}/>
+                        <TextField name="port" label="Port" style={{width: 80}} onKeyUp={handlerKeys}/>
+                        <TextField name="pattern" label="Pattern" style={{width: 300}} onKeyUp={handlerKeys}/>
+                        <Button type="submit" appearance="primary">Show me!</Button>
                     </Form>
                 </Header>
                 <Content>
@@ -96,7 +99,7 @@ const MainContainer = () => {
                                 layout={['total', '-', 'limit', '|', 'pager', 'skip']}
                                 total={total}
                                 limit={pageSize}
-                                limitOptions={[10, 20,50,100]}
+                                limitOptions={[10, 20, 50, 100]}
                                 activePage={pageNumber}
                                 onChangePage={setPageNumber}
                                 onChangeLimit={setPageSize}
