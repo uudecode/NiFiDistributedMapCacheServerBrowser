@@ -1,5 +1,5 @@
 import React, {SyntheticEvent, useState, KeyboardEvent} from "react";
-import {Container, Header, Content, Form, Button, Pagination, Schema, Message} from "rsuite";
+import {Container, Header, Content, Form, Button, Pagination, Schema, Message, Panel} from "rsuite";
 
 import {Table, Column, Cell, HeaderCell, ColumnGroup, TableProps} from 'rsuite-table';
 import axios from "axios";
@@ -58,32 +58,41 @@ const MainContainer = () => {
                 port: inputText.port,
                 pattern: inputText.pattern,
             },
-        })
+        }).then((response) => {
+            setData(response.data.data);
+            setTotal(response.data.total);
+        }).catch((error) =>
+            alert(
+                `Произошла непредвиденная ошибка, код ${error.response.status}`
+            )
+        );
         setLoading(false);
     }
     return (
         <div className="show-fake-browser ">
             <Container>
                 <Header>
-                    <Form layout="inline" model={model} onChange={onChange} onSubmit={handleSubmit}
-                          formValue={inputText}>
-                        <TextField name="host" label="Host" style={{width: 300}} onKeyUp={handlerKeys}/>
-                        <TextField name="port" label="Port" style={{width: 80}} onKeyUp={handlerKeys}/>
-                        <TextField name="pattern" label="Pattern" style={{width: 300}} onKeyUp={handlerKeys}/>
-                        <Button type="submit" appearance="primary">Show me!</Button>
-                    </Form>
+                    <Panel header="Enter connection information for your NiFi Distributed MapCache Server">
+                        <Form layout="inline" model={model} onChange={onChange} onSubmit={handleSubmit}
+                              formValue={inputText}>
+                            <TextField name="host" label="Host" style={{width: 300}} onKeyUp={handlerKeys}/>
+                            <TextField name="port" label="Port" style={{width: 80}} onKeyUp={handlerKeys}/>
+                            <TextField name="pattern" label="Pattern" style={{width: 300}} onKeyUp={handlerKeys}/>
+                            <Button type="submit" appearance="primary">Show me!</Button>
+                        </Form>
+                    </Panel>
                 </Header>
                 <Content>
 
                     <div>
-                        <Table height={420} data={data} loading={loading}>
-                            <Column width={50} align="center" fixed>
+                        <Table height={420} data={data} loading={loading} hover={true} autoHeight={true} bordered={true} cellBordered={true}>
+                            <Column align="center" resizable>
                                 <HeaderCell>Key</HeaderCell>
                                 <Cell dataKey="key"/>
                             </Column>
-                            <Column width={200} flexGrow={1}>
+                            <Column resizable flexGrow={1}>
                                 <HeaderCell>Value</HeaderCell>
-                                <Cell dataKey="Value"/>
+                                <Cell dataKey="value"/>
                             </Column>
                         </Table>
                         <div style={{padding: 20}}>
@@ -99,7 +108,7 @@ const MainContainer = () => {
                                 layout={['total', '-', 'limit', '|', 'pager', 'skip']}
                                 total={total}
                                 limit={pageSize}
-                                limitOptions={[10, 20, 50, 100]}
+                                limitOptions={[10, 20, 50, 100, 1000]}
                                 activePage={pageNumber}
                                 onChangePage={setPageNumber}
                                 onChangeLimit={setPageSize}

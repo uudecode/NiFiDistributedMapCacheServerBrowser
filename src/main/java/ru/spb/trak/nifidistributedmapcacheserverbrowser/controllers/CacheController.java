@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.spb.trak.nifidistributedmapcacheserverbrowser.ProtocolVersionException;
 import ru.spb.trak.nifidistributedmapcacheserverbrowser.model.Element;
 import ru.spb.trak.nifidistributedmapcacheserverbrowser.model.ElementRepository;
+import ru.spb.trak.nifidistributedmapcacheserverbrowser.model.Response;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -28,11 +29,11 @@ public class CacheController {
     }
 
     @GetMapping("/keys")
-    Collection<Element> keys(@RequestParam(name = "host") String host,
-                             @RequestParam(name = "port") int port,
-                             @RequestParam(name = "page_size", required = false) int pageSize,
-                             @RequestParam(name = "page_number", required = false) int pageNumber,
-                             @RequestParam(name = "pattern", required = false) String pattern) throws UnknownHostException, IOException, ProtocolVersionException {
+    Response keys(@RequestParam(name = "host") String host,
+                  @RequestParam(name = "port") int port,
+                  @RequestParam(name = "page_size", required = false) int pageSize,
+                  @RequestParam(name = "page_number", required = false) int pageNumber,
+                  @RequestParam(name = "pattern", required = false) String pattern) throws UnknownHostException, IOException, ProtocolVersionException {
         if (StringUtils.hasText(pattern)) {
             return elementRepository.findByPattern(host, port, pattern, pageSize, pageNumber);
         }
