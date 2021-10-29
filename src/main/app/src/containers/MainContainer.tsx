@@ -1,4 +1,4 @@
-import React, {SyntheticEvent, useState, KeyboardEvent, useCallback} from "react";
+import React, {SyntheticEvent, useState, KeyboardEvent, MouseEvent, useCallback} from "react";
 import {Container, Header, Content, Form, Button, Pagination, Schema, Message, Panel} from "rsuite";
 
 import {Table, Column, Cell, HeaderCell, ColumnGroup, TableProps} from 'rsuite-table';
@@ -21,6 +21,8 @@ const MainContainer = () => {
     });
 
     const [loading, setLoading] = useState(false);
+    const [showError, setShowError] = useState(false);
+    const [errorText, setErrorText] = useState(false);
     const [data, setData] = useState([]);
     const [total, setTotal] = useState(0);
     const [pageSize, setPageSize] = useState(10);
@@ -49,35 +51,39 @@ const MainContainer = () => {
         });
     }
 
+    const resetError = (e: MouseEvent<Element>| undefined) => {
+        setShowError(false);
+    }
+
     const queryPage = useCallback(async (page, pageSize) => {
         setLoading(true);
-        try {
-            axios({
-                method: "GET",
-                url: "/api/keys",
-                params: {
-                    page_size: pageSize,
-                    page_number: page,
-                    host: inputText.host,
-                    port: inputText.port,
-                    pattern: inputText.pattern,
-                },
-            }).then((response) => {
-                setData(response.data.data);
-                setTotal(response.data.total);
-            })
-        } catch(error) {
-            alert(`Произошла непредвиденная ошибка на сервере`)
-            throw error; // чтоб можно было это поймать в onPageChange
-        } finally {
-            setLoading(false);
-        }
+
+        axios({
+            method: "GET",
+            url: "/api/keys",
+            params: {
+                page_size: pageSize,
+                page_number: page,
+                host: inputText.host,
+                port: inputText.port,
+                pattern: inputText.pattern,
+            },
+        }).then((response) => {
+            setData(response.data.data);
+            setTotal(response.data.total);
+        }).catch((error) => {
+            setErrorText(error.response.status)
+            setShowError(true);
+        }).finally(() => {
+                setLoading(false);
+            }
+        )
     }, [setPageSize, setPageNumber, onChange])
 
     const onLimitChange = useCallback(async (newPageSize) => {
         try {
-        await queryPage(pageNumber, newPageSize);
-        setPageSize(newPageSize);
+            await queryPage(pageNumber, newPageSize);
+            setPageSize(newPageSize);
         } catch (error) {
             // nothing to do here, since we already alerted the user
         }
@@ -97,6 +103,11 @@ const MainContainer = () => {
         <div className="show-fake-browser ">
             <Container>
                 <Header>
+
+                    <Message showIcon type="error" header="Error"  hidden={!showError} onClose={resetError}>
+                        An unexpected error occurred on the server: {errorText}
+                    </Message>
+
                     <Panel header="Enter connection information for your NiFi Distributed MapCache Server">
                         <Form layout="inline" model={model} onChange={onChange} onSubmit={handleSubmit}
                               formValue={inputText}>
@@ -109,36 +120,35 @@ const MainContainer = () => {
                 </Header>
                 <Content>
 
-                    <div>
-                        <Table height={420} data={data} loading={loading} hover={true} autoHeight={true} bordered={true} cellBordered={true}>
-                            <Column align="center" resizable minWidth={350} width={350}>
-                                <HeaderCell>Key</HeaderCell>
-                                <Cell dataKey="key"/>
-                            </Column>
-                            <Column resizable flexGrow={1}>
-                                <HeaderCell>Value</HeaderCell>
-                                <Cell dataKey="value"/>
-                            </Column>
-                        </Table>
-                        <div style={{padding: 20}}>
-                            <Pagination
-                                prev
-                                next
-                                first
-                                last
-                                ellipsis
-                                boundaryLinks
-                                maxButtons={5}
-                                size="xs"
-                                layout={['total', '-', 'limit', '|', 'pager', 'skip']}
-                                total={total}
-                                limit={pageSize}
-                                limitOptions={[10, 20, 50, 100, 1000]}
-                                activePage={pageNumber}
-                                onChangePage={onPageChange}
-                                onChangeLimit={onLimitChange}
-                            />
-                        </div>
+                    <Table height={420} data={data} loading={loading} hover={true} autoHeight={true} bordered={true}
+                           cellBordered={true}>
+                        <Column align="center" resizable minWidth={350} width={350}>
+                            <HeaderCell>Key</HeaderCell>
+                            <Cell dataKey="key"/>
+                        </Column>
+                        <Column resizable flexGrow={1}>
+                            <HeaderCell>Value</HeaderCell>
+                            <Cell dataKey="value"/>
+                        </Column>
+                    </Table>
+                    <div style={{padding: 20}}>
+                        <Pagination
+                            prev
+                            next
+                            first
+                            last
+                            ellipsis
+                            boundaryLinks
+                            maxButtons={5}
+                            size="xs"
+                            layout={['total', '-', 'limit', '|', 'pager', 'skip']}
+                            total={total}
+                            limit={pageSize}
+                            limitOptions={[10, 20, 50, 100, 1000]}
+                            activePage={pageNumber}
+                            onChangePage={onPageChange}
+                            onChangeLimit={onLimitChange}
+                        />
                     </div>
                 </Content>
             </Container>
