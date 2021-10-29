@@ -109,7 +109,6 @@ public class ElementRepository implements Repository<Element, Long> {
             int keysCount = input.readInt();
             log.info(String.format("Keys count is %d", keysCount));
             for (int i = 0; i < keysCount; i++) {
-                log.info(" Taking key: " + i );
                 try {
                 int keyNameSize = input.readInt();
                 byte[] bytes = new byte[keyNameSize];

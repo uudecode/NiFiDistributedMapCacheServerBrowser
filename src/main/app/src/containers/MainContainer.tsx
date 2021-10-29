@@ -1,4 +1,4 @@
-import React, {SyntheticEvent, useState, KeyboardEvent} from "react";
+import React, {SyntheticEvent, useState, KeyboardEvent, useCallback} from "react";
 import {Container, Header, Content, Form, Button, Pagination, Schema, Message, Panel} from "rsuite";
 
 import {Table, Column, Cell, HeaderCell, ColumnGroup, TableProps} from 'rsuite-table';
@@ -28,15 +28,18 @@ const MainContainer = () => {
     const handleSubmit = (checkStatus: boolean, e: SyntheticEvent<Element, Event>) => {
         if (checkStatus) {
             e.preventDefault();
-            queryData();
+            queryPage(pageNumber, pageSize);
         }
     };
     const handlerKeys = (e: KeyboardEvent<HTMLFormElement>) => {
         if (e.key === "Enter") {
-            queryData();
+            queryPage(pageNumber, pageSize);
+            // queryData();
         }
     };
+
     const [inputText, setInputText] = useState({host: "", port: "", pattern: ""});
+
     const onChange = (e: Record<string, string>) => {
         setInputText({
             ...inputText,
@@ -46,28 +49,50 @@ const MainContainer = () => {
         });
     }
 
-    const queryData = () => {
+    const queryPage = useCallback(async (page, pageSize) => {
         setLoading(true);
-        axios({
-            method: "GET",
-            url: "/api/keys",
-            params: {
-                page_size: pageSize,
-                page_number: pageNumber,
-                host: inputText.host,
-                port: inputText.port,
-                pattern: inputText.pattern,
-            },
-        }).then((response) => {
-            setData(response.data.data);
-            setTotal(response.data.total);
-        }).catch((error) =>
-            alert(
-                `Произошла непредвиденная ошибка, код ${error.response.status}`
-            )
-        );
-        setLoading(false);
-    }
+        try {
+            axios({
+                method: "GET",
+                url: "/api/keys",
+                params: {
+                    page_size: pageSize,
+                    page_number: page,
+                    host: inputText.host,
+                    port: inputText.port,
+                    pattern: inputText.pattern,
+                },
+            }).then((response) => {
+                setData(response.data.data);
+                setTotal(response.data.total);
+            })
+        } catch(error) {
+            alert(`Произошла непредвиденная ошибка на сервере`)
+            throw error; // чтоб можно было это поймать в onPageChange
+        } finally {
+            setLoading(false);
+        }
+    }, [setPageSize, setPageNumber, onChange])
+
+    const onLimitChange = useCallback(async (newPageSize) => {
+        try {
+        await queryPage(pageNumber, newPageSize);
+        setPageSize(newPageSize);
+        } catch (error) {
+            // nothing to do here, since we already alerted the user
+        }
+    }, [setPageSize, onChange])
+
+    const onPageChange = useCallback(async (newPage) => {
+        try {
+            await queryPage(newPage, pageSize);
+            setPageNumber(newPage);
+        } catch (error) {
+            // nothing to do here, since we already alerted the user
+        }
+    }, [setPageNumber, onChange])
+
+
     return (
         <div className="show-fake-browser ">
             <Container>
@@ -86,7 +111,7 @@ const MainContainer = () => {
 
                     <div>
                         <Table height={420} data={data} loading={loading} hover={true} autoHeight={true} bordered={true} cellBordered={true}>
-                            <Column align="center" resizable>
+                            <Column align="center" resizable minWidth={350} width={350}>
                                 <HeaderCell>Key</HeaderCell>
                                 <Cell dataKey="key"/>
                             </Column>
@@ -110,14 +135,13 @@ const MainContainer = () => {
                                 limit={pageSize}
                                 limitOptions={[10, 20, 50, 100, 1000]}
                                 activePage={pageNumber}
-                                onChangePage={setPageNumber}
-                                onChangeLimit={setPageSize}
+                                onChangePage={onPageChange}
+                                onChangeLimit={onLimitChange}
                             />
                         </div>
                     </div>
                 </Content>
             </Container>
-
         </div>)
 }
 
