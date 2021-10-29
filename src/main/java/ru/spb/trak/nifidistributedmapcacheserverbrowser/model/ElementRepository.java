@@ -12,6 +12,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -26,36 +27,43 @@ public class ElementRepository implements Repository<Element, Long> {
     private static final int ATTEMPTS = 20;
 
     public Response findAll(String host, int port, int pageSize, int pageNumber) throws UnknownHostException, IOException, ProtocolVersionException {
-        final Collection<Element> elements = new ArrayList<Element>();
-        fillWithKeys(elements, host, port);
-        fillValues(elements, host, port, ".*");
+        Collection<Element> elements = new ArrayList<Element>();
         Response response = new Response();
+        fillWithKeys(elements, host, port);
         response.setTotal(elements.size());
+        log.info("time for paging " + elements.size());
+        elements = makePagination(elements, pageSize, pageNumber);
+        log.info("after paging " + elements.size());
+        fillValues(elements, host, port, ".*");
         response.setData(elements);
         return response;
     }
 
     public Response findByPattern(String host, int port, String pattern, int pageSize, int pageNumber) throws UnknownHostException, IOException, ProtocolVersionException {
-        final Collection<Element> elements = new ArrayList<Element>();
-        fillWithKeys(elements, host, port);
-        fillValues(elements, host, port, ".*" + pattern + ".*");
+        Collection<Element> elements = new ArrayList<Element>();
         Response response = new Response();
+        fillWithKeys(elements, host, port);
+        filter(elements, pattern);
         response.setTotal(elements.size());
+        log.info("time for paging " + elements.size());
+        elements = makePagination(elements, pageSize, pageNumber);
+        log.info("after paging " + elements.size());
+        fillValues(elements, host, port, ".*" + pattern + ".*");
         response.setData(elements);
         return response;
     }
 
 
+    private Collection<Element> makePagination(Collection<Element> elements, int pageSize, int pageNumber) {
+        int fromIndex = (pageNumber - 1) * pageSize;
+        if(elements == null || elements.size() <= fromIndex){
+            return Collections.emptyList();
+        } else {
+            return  ((ArrayList<Element>)elements).subList(fromIndex, Math.min(fromIndex + pageSize, elements.size()));
+        }
+    }
+
     private void fillValues(Collection<Element> elements, final String host, final int port, final String pattern) throws PatternSyntaxException, UnknownHostException, IOException, ProtocolVersionException {
-        Pattern key_pattern = Pattern.compile(pattern);
-        List<Element> elementsForRemove = new ArrayList<Element>();
-        elements.forEach(element -> {
-            Matcher matcher = key_pattern.matcher(element.getKey());
-            if (!matcher.matches()) {
-                elementsForRemove.add(element);
-            }
-        });
-        elements.removeAll(elementsForRemove);
         try (Socket socket = new Socket(host, port);
              DataInputStream input = new DataInputStream(socket.getInputStream());
              DataOutputStream output = new DataOutputStream(socket.getOutputStream())) {
@@ -76,6 +84,18 @@ public class ElementRepository implements Repository<Element, Long> {
         }
     }
 
+    private void filter(Collection<Element> elements, String pattern) {
+        Pattern key_pattern = Pattern.compile(pattern);
+        List<Element> elementsForRemove = new ArrayList<Element>();
+        elements.forEach(element -> {
+            Matcher matcher = key_pattern.matcher(element.getKey());
+            if (!matcher.matches()) {
+                elementsForRemove.add(element);
+            }
+        });
+        elements.removeAll(elementsForRemove);
+    }
+
     private void fillWithKeys(Collection<Element> elements,final String host, final int port) throws UnknownHostException, IOException, ProtocolVersionException {
         try (Socket socket = new Socket(host, port);
              DataInputStream input = new DataInputStream(socket.getInputStream());
@@ -89,12 +109,18 @@ public class ElementRepository implements Repository<Element, Long> {
             int keysCount = input.readInt();
             log.info(String.format("Keys count is %d", keysCount));
             for (int i = 0; i < keysCount; i++) {
+                log.info(" Taking key: " + i );
+                try {
                 int keyNameSize = input.readInt();
                 byte[] bytes = new byte[keyNameSize];
                 input.readFully(bytes);
                 Element element = new Element(new String(bytes));
                 elements.add(element);
-            }
+                } catch (SocketException e) {
+                    log.info("Looks like the key count has changed. Returning all we have got so far: ("+ (i-1) + ")");
+                    return;
+                }
+             }
         }
     }
 

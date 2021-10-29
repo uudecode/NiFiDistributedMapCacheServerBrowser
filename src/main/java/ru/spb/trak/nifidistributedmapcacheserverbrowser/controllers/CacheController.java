@@ -34,6 +34,10 @@ public class CacheController {
                   @RequestParam(name = "page_size", required = false) int pageSize,
                   @RequestParam(name = "page_number", required = false) int pageNumber,
                   @RequestParam(name = "pattern", required = false) String pattern) throws UnknownHostException, IOException, ProtocolVersionException {
+        if(pageSize <= 0 || pageNumber <= 0) {
+            throw new IllegalArgumentException("invalid page size: " + pageSize + " or page number: " + pageNumber);
+        }
+
         if (StringUtils.hasText(pattern)) {
             return elementRepository.findByPattern(host, port, pattern, pageSize, pageNumber);
         }
